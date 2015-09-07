@@ -24,7 +24,7 @@ def scrape_list(url,browser)
     browser.all('./tbody/tr[position()>2 and position()<last()]').each  do |row|
       absolute_uri = URI.join(url, row.find('./td/a')[:href]).to_s
       person = {}
-      person['id'] = year + /&j=(?<id>\d*)&const/.match(absolute_uri)[:id].to_s
+      person['id'] = year + '-'+/&j=(?<id>\d*)&const/.match(absolute_uri)[:id].to_s
       person[:url] = absolute_uri
       person[:name] = row.find('./td[position()=1]').text.strip
       person[:area] = row.find('./td[position()=4]').text.strip
