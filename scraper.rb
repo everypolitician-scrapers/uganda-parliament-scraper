@@ -57,7 +57,7 @@ def scrape_person (url, browser)
     end
 
     raw_dob = browser.find(with_label 'Date of birth:').text.strip
-    person[:date_of_birth] = Date.strptime(   raw_dob, '%d/%m/%Y' ).strftime("%Y-%d-%m") unless raw_dob.empty?
+    person[:date_of_birth] = Date.strptime(   raw_dob, '%d/%m/%Y' ).strftime("%Y-%m-%d") unless raw_dob.empty?
   end
   return person
 end
