@@ -9,7 +9,9 @@ def scrape(url)
   people = scrape_list(url,browser)
   # we completely walk the list DOM then go to the individual mp pages so we can use the same Capybara session
   people.each do  |basic_details|
-    more_details =  scrape_person(basic_details[:url], browser)
+    more_details =  scrape_person(basic_details['source'], browser)
+    puts basic_details
+    puts more_details
     ScraperWiki.save_sqlite(['id'], basic_details.merge(more_details))
   end
 
@@ -25,7 +27,7 @@ def scrape_list(url,browser)
       absolute_uri = URI.join(url, row.find('./td/a')[:href]).to_s
       person = {}
       person['id'] = year + /&j=(?<id>\d*)&const/.match(absolute_uri)[:id].to_s
-      person[:url] = absolute_uri
+      person['source'] = absolute_uri
       person[:name] = row.find('./td[position()=1]').text.strip
       person[:area] = row.find('./td[position()=4]').text.strip
       people.push(person)
@@ -34,20 +36,27 @@ def scrape_list(url,browser)
   return people
 end
 
-def scrape_person (url,browser)
+def scrape_person (url, browser)
   person = {}
   browser.visit(url)
-  browser.within( '//*/table/tbody') do
-      person = {
-          :image => URI.join(url, browser.find('./tr[position()=1]/td/img')[:src]).to_s ,
-          :gender =>         browser.find(with_label 'Gender:').text.strip,
-          :martial_status => browser.find(with_label 'Marital Status:').text.strip,
-          :email =>          browser.find(with_label 'Email address:').text.strip,
-          :postal_address => browser.find(with_label 'Postal Address:').text.strip,
-          :phone =>          browser.find(with_label 'Mobile Telephone:').text.strip,
-          :religion =>       browser.find(with_label 'Religion:').text.strip,
-          :date_of_birth =>  browser.find(with_label 'Date of birth:').text.strip,
-      }
+  browser.within('//*/table/tbody') do
+    person = {
+        :image =>          URI.join(url, browser.find('./tr[position()=1]/td/img')[:src]).to_s,
+        :gender =>         browser.find(with_label 'Gender:').text.strip,
+        :martial_status => browser.find(with_label 'Marital Status:').text.strip,
+        :email =>          browser.find(with_label 'Email address:').text.strip,
+        :postal_address => browser.find(with_label 'Postal Address:').text.strip,
+        :phone =>          browser.find(with_label 'Mobile Telephone:').text.strip,
+        :religion =>       browser.find(with_label 'Religion:').text.strip,
+    }
+
+    party_selector = with_label 'Political Party:'
+    if browser.has_selector? party_selector
+      person[:party]= /.*\(([^\(]*)\)/.match(browser.find(party_selector).text.strip)[1].to_s.strip
+    end
+
+    raw_dob = browser.find(with_label 'Date of birth:').text.strip
+    person[:date_of_birth] = Date.strptime(   raw_dob, '%d/%m/%Y' ).strftime("%Y-%d-%m") unless raw_dob.empty?
   end
   return person
 end
