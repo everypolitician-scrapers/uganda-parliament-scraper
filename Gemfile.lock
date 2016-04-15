@@ -1,4 +1,11 @@
 GIT
+  remote: https://github.com/everypolitician/ocd_lookup
+  revision: fa1ec9ce2f23d43df096ac151c5b3f447d6f8771
+  branch: master
+  specs:
+    ocd_lookup (0.1.0)
+
+GIT
   remote: https://github.com/openaustralia/scraperwiki-ruby.git
   revision: fc50176812505e463077d5c673d504a6a234aa78
   branch: morph_defaults
@@ -51,6 +58,7 @@ PLATFORMS
   ruby
 
 DEPENDENCIES
+  ocd_lookup!
   poltergeist
   pry
   scraperwiki!

@@ -1,6 +1,8 @@
 require 'pry'
 require 'scraperwiki'
 require "capybara/poltergeist"
+require 'open-uri'
+require 'ocd_lookup'
 
 Capybara.default_selector = :xpath
 
@@ -14,6 +16,13 @@ def scrape(url)
     ScraperWiki.save_sqlite(['id'], basic_details.merge(more_details))
   end
 
+end
+
+def ocd_lookup
+  @ocd_lookup ||= begin
+    ocd_csv_url = 'https://github.com/theyworkforyou/uganda_ocd_ids/raw/master/identifiers/country-ug.csv'
+    OcdLookup::DivisionId.parse(open(ocd_csv_url).read)
+  end
 end
 
 def scrape_list(url,browser)
@@ -41,7 +50,14 @@ def scrape_list(url,browser)
       if special.include? person[:constituency]
         person[:post] = person[:constituency]
         person[:constituency] = ""
+
+        person[:area_id] = ocd_lookup.find(district: person[:district].gsub(/district/i, '').strip)
+      else
+        person[:area_id] = ocd_lookup.find(district: person[:district].gsub(/district/i, '').strip, constituency: person[:constituency])
       end
+
+      warn "Couldn't find :area_id for district=#{person[:district]} constituency=#{person[:constituency]}" if person[:area_id].nil?
+
       people.push(person)
     end
   end
