@@ -46,7 +46,7 @@ def scrape_list(url,browser)
       person[:district] = row.find('./td[position()=4]').text.strip
       person[:constituency] = row.find('./td[position()=3]').text.strip
 
-      special = ["PWD", "YOUTH", "EX-OFFICIO", "Workers' Represantive", "Woman Representative", "UPDF"].to_set
+      special = ["PWD", "YOUTH", "EX-OFFICIO", "Workers' Represantive", "Woman Representative", "UPDF", "Workers' Representative"].to_set
       if special.include? person[:constituency]
         person[:legislative_membership_type] = person[:constituency]
         person[:constituency] = ""
