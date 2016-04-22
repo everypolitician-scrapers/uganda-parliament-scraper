@@ -48,7 +48,7 @@ def scrape_list(url,browser)
 
       special = ["PWD", "YOUTH", "EX-OFFICIO", "Workers' Represantive", "Woman Representative", "UPDF"].to_set
       if special.include? person[:constituency]
-        person[:post] = person[:constituency]
+        person[:legislative_membership_type] = person[:constituency]
         person[:constituency] = ""
 
         person[:area_id] = ocd_lookup.find(district: person[:district].gsub(/district/i, '').strip)
