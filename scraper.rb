@@ -26,11 +26,17 @@ def ocd_lookup
 end
 
 def scrape_list(url,browser)
-  browser.visit(url)
-  browser.click_button 'Show all at once'
-  browser.find_all('//body/table/tbody/tr[position()>2 and position()<last()]').map  do |row|
-    scrape_table_row(url, row)
-  end
+  %w[a e i o u].map do |vowel|
+    browser.visit(url)
+    browser.click_link 'Search Other Parliaments'
+    browser.find("//input[contains(@name, '.sKey')]").set(vowel) # Search box
+    browser.find("//select[contains(@name, '.pal')]").select('Only The 9th Parliament') # Term dropdown
+    browser.find('//input[@value="Search Now"]').click
+    browser.click_button 'Show all at once' if browser.has_button?('Show all at once')
+    browser.find_all('//body/table/tbody/tr[position()>2 and position()<last()]').map  do |row|
+      scrape_table_row(url, row)
+    end
+  end.flatten.uniq { |person| person[:id] }
 end
 
 def scrape_table_row(url, row)
