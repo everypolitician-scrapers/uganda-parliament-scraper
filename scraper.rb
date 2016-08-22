@@ -12,8 +12,8 @@ def scrape(url)
   people = scrape_list(url,browser)
   # we completely walk the list DOM then go to the individual mp pages so we can use the same Capybara session
   people.each do  |basic_details|
-    more_details =  scrape_person(basic_details['source'], browser)
-    ScraperWiki.save_sqlite(['id'], basic_details.merge(more_details))
+    more_details =  scrape_person(basic_details[:source], browser)
+    ScraperWiki.save_sqlite([:id], basic_details.merge(more_details))
   end
 
 end
@@ -43,8 +43,8 @@ def scrape_table_row(url, row)
   person[:family_name] = names.last
   person[:sort_name] = "#{names.last}, #{names.first}"
 
-  person['id'] = year + '-'+/&j=(?<id>\d*)&const/.match(absolute_uri)[:id].to_s
-  person['source'] = absolute_uri
+  person[:id] = year + '-'+/&j=(?<id>\d*)&const/.match(absolute_uri)[:id].to_s
+  person[:source] = absolute_uri
   person[:url] = absolute_uri
   person[:district] = row.find('./td[position()=4]').text.strip
   person[:constituency] = row.find('./td[position()=3]').text.strip
