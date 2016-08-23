@@ -1,0 +1,10 @@
+---
+request:
+  method: get
+  uri: http://www.parliament.go.ug/mpdata/mps.hei?p=t#search
+response:
+  status:
+    message: OK
+    code: 200
+  date:
+  - Tue, 23 Aug 2016 14:25:31 GMT
