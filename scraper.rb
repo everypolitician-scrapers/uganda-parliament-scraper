@@ -12,8 +12,8 @@ def scrape(url)
   people = scrape_list(url,browser)
   # we completely walk the list DOM then go to the individual mp pages so we can use the same Capybara session
   people.each do  |basic_details|
-    more_details =  scrape_person(basic_details['source'], browser)
-    ScraperWiki.save_sqlite(['id'], basic_details.merge(more_details))
+    more_details =  scrape_person(basic_details[:source], browser)
+    ScraperWiki.save_sqlite([:id], basic_details.merge(more_details))
   end
 
 end
@@ -26,45 +26,51 @@ def ocd_lookup
 end
 
 def scrape_list(url,browser)
-  year = '2015'
-  people = []
-  browser.visit(url)
-  browser.click_button 'Show all at once'
-  browser.within( '//body/table') do
-    browser.all('./tbody/tr[position()>2 and position()<last()]').each  do |row|
-      absolute_uri = URI.join(url, row.find('./td/a')[:href]).to_s
-      person = {}
-      names = row.find('./td[position()=1]').text.strip.split(/[[:space:]]/, 2).reverse
-      person[:name] = names.join(" ")
-      person[:given_name] = names.first
-      person[:family_name] = names.last
-      person[:sort_name] = "#{names.last}, #{names.first}"
-
-      person['id'] = year + '-'+/&j=(?<id>\d*)&const/.match(absolute_uri)[:id].to_s
-      person['source'] = absolute_uri
-      person[:url] = absolute_uri
-      person[:district] = row.find('./td[position()=4]').text.strip
-      person[:constituency] = row.find('./td[position()=3]').text.strip
-
-      special = ["PWD", "YOUTH", "EX-OFFICIO", "Workers' Represantive", "Woman Representative", "UPDF", "Workers' Representative"].to_set
-      if special.include? person[:constituency]
-        spelling_fixups = {
-          "Workers' Represantive" => "Workers' Representative",
-        }
-        person[:legislative_membership_type] = spelling_fixups.fetch(person[:constituency], person[:constituency])
-        person[:constituency] = ""
-
-        person[:area_id] = ocd_lookup.find(district: person[:district].gsub(/district/i, '').strip)
-      else
-        person[:area_id] = ocd_lookup.find(district: person[:district].gsub(/district/i, '').strip, constituency: person[:constituency])
-      end
-
-      warn "Couldn't find :area_id for district=#{person[:district]} constituency=#{person[:constituency]}" if person[:area_id].nil?
-
-      people.push(person)
+  %w[a e i o u].map do |vowel|
+    browser.visit(url)
+    browser.click_link 'Search Other Parliaments'
+    browser.find("//input[contains(@name, '.sKey')]").set(vowel) # Search box
+    browser.find("//select[contains(@name, '.pal')]").select('Only The 9th Parliament') # Term dropdown
+    browser.find('//input[@value="Search Now"]').click
+    browser.click_button 'Show all at once' if browser.has_button?('Show all at once')
+    browser.find_all('//body/table/tbody/tr[position()>2 and position()<last()]').map  do |row|
+      scrape_table_row(url, row)
     end
+  end.flatten.uniq { |person| person[:id] }
+end
+
+def scrape_table_row(url, row)
+  year = '2015'
+  absolute_uri = URI.join(url, row.find('./td/a')[:href]).to_s
+  person = {}
+  names = row.find('./td[position()=1]').text.strip.split(/[[:space:]]/, 2).reverse
+  person[:name] = names.join(" ")
+  person[:given_name] = names.first
+  person[:family_name] = names.last
+  person[:sort_name] = "#{names.last}, #{names.first}"
+
+  person[:id] = year + '-'+/&j=(?<id>\d*)&const/.match(absolute_uri)[:id].to_s
+  person[:source] = absolute_uri
+  person[:url] = absolute_uri
+  person[:district] = row.find('./td[position()=4]').text.strip
+  person[:constituency] = row.find('./td[position()=3]').text.strip
+
+  special = ["PWD", "YOUTH", "EX-OFFICIO", "Workers' Represantive", "Woman Representative", "UPDF", "Workers' Representative"].to_set
+  if special.include? person[:constituency]
+    spelling_fixups = {
+      "Workers' Represantive" => "Workers' Representative",
+    }
+    person[:legislative_membership_type] = spelling_fixups.fetch(person[:constituency], person[:constituency])
+    person[:constituency] = ""
+
+    person[:area_id] = ocd_lookup.find(district: person[:district].gsub(/district/i, '').strip)
+  else
+    person[:area_id] = ocd_lookup.find(district: person[:district].gsub(/district/i, '').strip, constituency: person[:constituency])
   end
-  return people
+
+  warn "Couldn't find :area_id for district=#{person[:district]} constituency=#{person[:constituency]}" if person[:area_id].nil?
+
+  person
 end
 
 def party_info(str)
