@@ -10,3 +10,4 @@ gem "scraperwiki", git: "https://github.com/openaustralia/scraperwiki-ruby.git",
 gem "poltergeist"
 gem "pry"
 gem "ocd_lookup", git: "https://github.com/everypolitician/ocd_lookup", branch: "master"
+gem "scraped_page_archive", git: 'https://github.com/everypolitician/scraped_page_archive', branch: 'master'

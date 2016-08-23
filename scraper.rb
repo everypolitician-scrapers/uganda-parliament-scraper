@@ -3,6 +3,7 @@ require 'scraperwiki'
 require "capybara/poltergeist"
 require 'open-uri'
 require 'ocd_lookup'
+require 'scraped_page_archive/capybara'
 
 Capybara.default_selector = :xpath
 
