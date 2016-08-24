@@ -49,7 +49,7 @@ def scrape_table_row(url, row)
   person[:family_name] = names.last
   person[:sort_name] = "#{names.last}, #{names.first}"
 
-  person[:id] = /&j=(?<id>\d*)&const/.match(absolute_uri)[:id].to_s
+  person[:id] = Rack::Utils.parse_nested_query(URI.parse(absolute_uri).query)['j']
   person[:source] = absolute_uri
   person[:url] = absolute_uri
   person[:district] = row.find('./td[position()=4]').text.strip
