@@ -41,7 +41,6 @@ def scrape_list(url,browser)
 end
 
 def scrape_table_row(url, row)
-  year = '2015'
   absolute_uri = URI.join(url, row.find('./td/a')[:href]).to_s
   person = {}
   names = row.find('./td[position()=1]').text.strip.split(/[[:space:]]/, 2).reverse
@@ -50,7 +49,7 @@ def scrape_table_row(url, row)
   person[:family_name] = names.last
   person[:sort_name] = "#{names.last}, #{names.first}"
 
-  person[:id] = year + '-'+/&j=(?<id>\d*)&const/.match(absolute_uri)[:id].to_s
+  person[:id] = /&j=(?<id>\d*)&const/.match(absolute_uri)[:id].to_s
   person[:source] = absolute_uri
   person[:url] = absolute_uri
   person[:district] = row.find('./td[position()=4]').text.strip
