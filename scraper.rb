@@ -8,12 +8,10 @@ require 'scraped_page_archive/capybara'
 Capybara.default_selector = :xpath
 
 def scrape(url)
-  # Using poltergeist because the list page uses session variables
-  browser =  Capybara::Session.new(:poltergeist)
-  people = scrape_list(url,browser)
+  people = scrape_list(url)
   # we completely walk the list DOM then go to the individual mp pages so we can use the same Capybara session
   people.each do  |basic_details|
-    more_details =  scrape_person(basic_details[:source], browser)
+    more_details =  scrape_person(basic_details[:source])
     ScraperWiki.save_sqlite([:id], basic_details.merge(more_details))
   end
 
@@ -26,8 +24,10 @@ def ocd_lookup
   end
 end
 
-def scrape_list(url,browser)
+def scrape_list(url)
   %w[a e i o u].map do |vowel|
+    # Use a new poltergeist session each time because the list page uses session variables.
+    browser =  Capybara::Session.new(:poltergeist)
     browser.visit(url)
     browser.click_link 'Search Other Parliaments'
     browser.find("//input[contains(@name, '.sKey')]").set(vowel) # Search box
@@ -80,8 +80,9 @@ def party_info(str)
 end
 
 
-def scrape_person (url, browser)
+def scrape_person (url)
   person = {}
+  browser = Capybara::Session.new(:poltergeist)
   browser.visit(url)
   browser.within('//*/table/tbody') do
     person = {
