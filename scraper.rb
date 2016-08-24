@@ -7,6 +7,10 @@ require 'scraped_page_archive/capybara'
 
 Capybara.default_selector = :xpath
 
+def browser
+  @browser ||= Capybara::Session.new(:poltergeist)
+end
+
 def scrape(url)
   people = scrape_list(url)
   # we completely walk the list DOM then go to the individual mp pages so we can use the same Capybara session
@@ -27,7 +31,7 @@ end
 def scrape_list(url)
   %w[a e i o u].map do |vowel|
     # Use a new poltergeist session each time because the list page uses session variables.
-    browser =  Capybara::Session.new(:poltergeist)
+    browser.reset!
     browser.visit(url)
     browser.click_link 'Search Other Parliaments'
     browser.find("//input[contains(@name, '.sKey')]").set(vowel) # Search box
@@ -82,7 +86,7 @@ end
 
 def scrape_person (url)
   person = {}
-  browser = Capybara::Session.new(:poltergeist)
+  browser.reset!
   browser.visit(url)
   browser.within('//*/table/tbody') do
     person = {
