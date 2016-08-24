@@ -1,0 +1,10 @@
+---
+request:
+  method: get
+  uri: http://www.parliament.go.ug/mpdata/mps.hei?p=f&n=t&details=t&j=2&const=Maracha++County&dist_id=81&distname=Maracha
+response:
+  status:
+    message: OK
+    code: 200
+  date:
+  - Wed, 24 Aug 2016 01:12:06 GMT
