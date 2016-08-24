@@ -12,13 +12,12 @@ def browser
 end
 
 def scrape(url)
-  people = scrape_list(url)
+  people = scrape_all_terms(url)
   # we completely walk the list DOM then go to the individual mp pages so we can use the same Capybara session
   people.each do  |basic_details|
     more_details =  scrape_person(basic_details[:source])
-    ScraperWiki.save_sqlite([:id], basic_details.merge(more_details))
+    ScraperWiki.save_sqlite([:id, :term], basic_details.merge(more_details))
   end
-
 end
 
 def ocd_lookup
@@ -28,23 +27,29 @@ def ocd_lookup
   end
 end
 
-def scrape_list(url)
+def scrape_all_terms(url)
+  6.upto(9).map do |term|
+    scrape_list(url, term)
+  end.flatten.uniq { |person| [person[:id], person[:term]] }
+end
+
+def scrape_list(url, term)
   %w[a e i o u].map do |vowel|
     # Use a new poltergeist session each time because the list page uses session variables.
     browser.reset!
     browser.visit(url)
-    browser.click_link 'Search Other Parliaments'
+    browser.click_link 'Search Other Parliaments' if browser.has_link?('Search Other Parliaments')
     browser.find("//input[contains(@name, '.sKey')]").set(vowel) # Search box
-    browser.find("//select[contains(@name, '.pal')]").select('Only The 9th Parliament') # Term dropdown
+    browser.find("//select[contains(@name, '.pal')]").select("Only The #{term}th Parliament") # Term dropdown
     browser.find('//input[@value="Search Now"]').click
     browser.click_button 'Show all at once' if browser.has_button?('Show all at once')
     browser.find_all('//body/table/tbody/tr[position()>2 and position()<last()]').map  do |row|
-      scrape_table_row(url, row)
+      scrape_table_row(url, term, row)
     end
-  end.flatten.uniq { |person| person[:id] }
+  end
 end
 
-def scrape_table_row(url, row)
+def scrape_table_row(url, term, row)
   absolute_uri = URI.join(url, row.find('./td/a')[:href]).to_s
   person = {}
   names = row.find('./td[position()=1]').text.strip.split(/[[:space:]]/, 2).reverse
@@ -58,6 +63,7 @@ def scrape_table_row(url, row)
   person[:url] = absolute_uri
   person[:district] = row.find('./td[position()=4]').text.strip
   person[:constituency] = row.find('./td[position()=3]').text.strip
+  person[:term] = term
 
   special = ["PWD", "YOUTH", "EX-OFFICIO", "Workers' Represantive", "Woman Representative", "UPDF", "Workers' Representative"].to_set
   if special.include? person[:constituency]
@@ -88,6 +94,8 @@ def scrape_person (url)
   person = {}
   browser.reset!
   browser.visit(url)
+  return person unless browser.status_code == 200 # This avoids some pages that were returning a 403 error.
+  return person unless browser.has_selector?('//*/table/tbody')
   browser.within('//*/table/tbody') do
     person = {
         :image =>          URI.join(url, browser.find('./tr[position()=1]/td/img')[:src]).to_s,
